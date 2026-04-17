@@ -1,14 +1,12 @@
-version: "3.9"
-
 services:
   agent:
     build: .
-    ports:
-      - "8000:8000"
     environment:
-      - ENVIRONMENT=staging
+      - ENVIRONMENT=production
       - APP_NAME=Production AI Agent
       - REDIS_URL=redis://redis:6379/0
+      - RATE_LIMIT_PER_MINUTE=10
+      - MONTHLY_BUDGET_USD=10.0
     env_file:
       - .env.local
     depends_on:
@@ -26,8 +24,23 @@ services:
   redis:
     image: redis:7-alpine
     command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - agent
+    restart: unless-stopped
+
+volumes:
+  redis_data:

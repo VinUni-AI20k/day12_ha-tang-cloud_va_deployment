@@ -4,37 +4,33 @@
 https://day12-final-production.up.railway.app
 
 ## Platform
-Railway (Nixpacks builder, auto-detect Python)
+Railway
 
 ## Test Commands
 
 ### Health Check
 ```bash
 curl https://day12-final-production.up.railway.app/health
-# Expected: {"status":"ok","version":"1.0.0","environment":"development",...}
 ```
 
 ### Readiness Check
 ```bash
 curl https://day12-final-production.up.railway.app/ready
-# Expected: {"ready":true}
 ```
 
 ### Authentication Required
 ```bash
 curl -X POST https://day12-final-production.up.railway.app/ask \
   -H "Content-Type: application/json" \
-  -d '{"question": "Hello"}'
-# Expected: 401 {"detail":"Invalid or missing API key..."}
+  -d '{"user_id":"test","question":"Hello"}'
 ```
 
-### API Test (with authentication)
+### API Test
 ```bash
 curl -X POST https://day12-final-production.up.railway.app/ask \
-  -H "X-API-Key: day12-secret-key-2026" \
+  -H "X-API-Key: YOUR_DEPLOYED_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"question": "Hello from production!"}'
-# Expected: 200 {"question":"...","answer":"...","model":"gpt-4o-mini","timestamp":"..."}
+  -d '{"user_id":"demo","question":"Hello from production!"}'
 ```
 
 ### Rate Limiting Test
@@ -42,27 +38,24 @@ curl -X POST https://day12-final-production.up.railway.app/ask \
 for i in {1..15}; do
   curl -s -o /dev/null -w "Request $i: HTTP %{http_code}\n" \
     -X POST https://day12-final-production.up.railway.app/ask \
-    -H "X-API-Key: day12-secret-key-2026" \
+    -H "X-API-Key: YOUR_DEPLOYED_API_KEY" \
     -H "Content-Type: application/json" \
-    -d '{"question": "test"}'
+    -d '{"user_id":"ratetest","question":"test"}'
 done
-# Expected: 200 for first 10, then 429 Too Many Requests
 ```
 
-## Environment Variables Set on Railway
-- `AGENT_API_KEY` — API key để xác thực
-- `PORT` — Inject tự động bởi Railway
+## Environment Variables Set
+- `PORT`
+- `REDIS_URL`
+- `AGENT_API_KEY`
+- `JWT_SECRET`
+- `MONTHLY_BUDGET_USD`
+- `LOG_LEVEL`
 
-## Features Implemented
-- API Key authentication (X-API-Key header)
-- Rate limiting (10 req/min per key)
-- Cost guard (daily budget tracking)
-- Health check endpoint (/health)
-- Readiness check endpoint (/ready)
-- Graceful shutdown (SIGTERM handler)
-- Structured JSON logging
-- No hardcoded secrets
+## Screenshots
+- [Deployment dashboard](screenshots/dashboard.png)
+- [Service running](screenshots/running.png)
+- [Test results](screenshots/test.png)
 
-## Railway Project
-- Project ID: 8d621142-5838-4aab-b005-99c6b9c32f8d
-- Dashboard: https://railway.com/project/8d621142-5838-4aab-b005-99c6b9c32f8d
+## Notes
+- This file intentionally uses placeholders instead of real secrets.
