@@ -17,9 +17,14 @@ def root():
     return {"message": "Agent is running in a Docker container!"}
 
 
+from pydantic import BaseModel
+
+class AskRequest(BaseModel):
+    question: str
+
 @app.post("/ask")
-async def ask_agent(question: str):
-    return {"answer": ask(question)}
+async def ask_agent(body: AskRequest):
+    return {"answer": ask(body.question)}
 
 
 @app.get("/health")

@@ -12,30 +12,29 @@ from utils.mock_llm import ask
 
 app = FastAPI(title="My Agent")
 
-# ❌ Vấn đề 1: API key hardcode trong code
-# Nếu push lên GitHub → key bị lộ ngay lập tức
-OPENAI_API_KEY = "sk-hardcoded-fake-key-never-do-this"
-DATABASE_URL = "postgresql://admin:password123@localhost:5432/mydb"
-
-# ❌ Vấn đề 2: Không có config management
-DEBUG = True
-MAX_TOKENS = 500
-
+# Thiết lập logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @app.get("/")
 def home():
     return {"message": "Hello! Agent is running on my machine :)"}
 
+@app.get("/health")
+def health():
+    """Liveness probe cho Cloud Platform."""
+    return {"status": "ok"}
 
 @app.post("/ask")
-def ask_agent(question: str):
-    # ❌ Vấn đề 3: Print thay vì proper logging
-    print(f"[DEBUG] Got question: {question}")
-    print(f"[DEBUG] Using key: {OPENAI_API_KEY}")  # ❌ log ra secret!
-
+def ask_agent(question: str, x_api_key: str = Header(None)):
+    # Bảo mật: Kiểm tra API Key
+    if x_api_key != AGENT_API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    logger.info(f"Got question: {question}")
     response = ask(question)
-
-    print(f"[DEBUG] Response: {response}")
+    
+    logger.info(f"Response: {response}")
     return {"answer": response}
 
 

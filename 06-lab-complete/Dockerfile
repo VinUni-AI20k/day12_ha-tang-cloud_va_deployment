@@ -1,25 +1,34 @@
 # STAGE 1: Builder
 FROM python:3.11-slim AS builder
 WORKDIR /app
-COPY requirements.txt .
+# Copy source code
+COPY 06-lab-complete/requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 # STAGE 2: Runtime
-FROM python:3.11-slim
+FROM python:3.11-slim AS runtime
 WORKDIR /app
 
+# Bảo mật: Tạo user mới
+RUN useradd -m myuser
+USER myuser
+
 # Copy packages từ stage 1
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+COPY --from=builder /root/.local /home/myuser/.local
+ENV PATH=/home/myuser/.local/bin:$PATH
 
 # Copy source code
-COPY . .
+COPY --chown=myuser:myuser 06-lab-complete/ .
+COPY --chown=myuser:myuser utils/ ./utils/
 
-# Biến môi trường mặc định
+# Biến môi trường
 ENV PORT=8000
-ENV AGENT_API_KEY=h2a-secret-key
+ENV PYTHONUNBUFFERED=1
+
+# Tự động kiểm tra sức khỏe từ bên trong Container
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:$PORT/health || exit 1
 
 EXPOSE 8000
 
-# Chạy ứng dụng thông qua module python để tự động xử lý PORT
 CMD ["python", "-m", "app.main"]

@@ -39,3 +39,12 @@
     - Đã cài đặt **Health check (/health)** để kiểm tra trạng thái sống còn của ứng dụng.
     - Đã cài đặt **Readiness probe (/ready)** để đảm bảo app chỉ nhận traffic khi đã khởi động xong.
     - Đặc biệt, đã thực hiện **Graceful Shutdown**: Khi nhận tín hiệu SIGTERM từ Railway, app sẽ chuyển trạng thái `ready` thành `False` để Load Balancer ngừng gửi khách mới, sau đó mới đóng server một cách êm ái. Điều này giúp không có request nào của khách hàng bị ngắt quãng giữa chừng.
+
+## Part 3: Cloud Deployment
+- **Exercise 3.2: Comparison (Railway vs Render)**
+    - **Railway:** Rất mạnh ở khả năng tự động hóa, tự phát hiện Dockerfile và hỗ trợ deploy nhanh từ CLI. Tích hợp sẵn DB/Redis rất tiện lợi.
+    - **Render:** Có giao diện trực quan và file cấu hình `render.yaml` giúp quản lý cơ sở hạ tầng dưới dạng mã (Infrastructure as Code) một cách chuyên nghiệp.
+
+## Part 5: Stateless Design & Scaling
+- **Stateless Design:** Đã sử dụng **Redis** để lưu trữ lịch sử hội thoại. Việc này đảm bảo khi hệ thống mở rộng lên nhiều máy chủ (Scaling), bất kỳ máy chủ nào cũng có thể xử lý yêu cầu của người dùng mà không bị mất dữ liệu session.
+- **Load Balancing:** Sử dụng **Nginx** để phân phối tải đều cho các instance Agent, đảm bảo hệ thống luôn sẵn sàng và có tính chịu lỗi (High Availability).

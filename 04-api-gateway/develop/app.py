@@ -64,15 +64,20 @@ def root():
     return {"message": "AI Agent API", "auth": "Required for /ask"}
 
 
+from pydantic import BaseModel
+
+class QuestionRequest(BaseModel):
+    question: str
+
 @app.post("/ask")
 async def ask_agent(
-    question: str,
-    _key: str = Depends(verify_api_key),  # ✅ require auth
+    request: QuestionRequest,
+    user: str = Depends(verify_api_key),
 ):
-    """Protected endpoint — cần X-API-Key header"""
+    """Protected endpoint — cần X-API-Key header và JSON Body"""
     return {
-        "question": question,
-        "answer": ask(question),
+        "question": request.question,
+        "answer": ask(request.question),
     }
 
 
@@ -86,4 +91,4 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     print(f"API Key: {API_KEY}")
     print(f"Test: curl -H 'X-API-Key: {API_KEY}' http://localhost:{port}/ask?question=hello")
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)

@@ -82,19 +82,26 @@ async def track_requests(request, call_next):
 
 
 # ──────────────────────────────────────────────────────────
-# Business Logic
+# Business Logic (Stateless with Redis)
 # ──────────────────────────────────────────────────────────
+import redis
+import json
 
-@app.get("/")
-def root():
-    return {"message": "AI Agent with health checks!"}
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
+def save_chat_history(user_id: str, message: dict):
+    redis_client.rpush(f"chat:{user_id}", json.dumps(message))
+    redis_client.ltrim(f"chat:{user_id}", -10, -1)
 
 @app.post("/ask")
-async def ask_agent(question: str):
+async def ask_agent(question: str, user_id: str = "default_user"):
     if not _is_ready:
         raise HTTPException(503, "Agent not ready")
-    return {"answer": ask(question)}
+    
+    answer = ask(question)
+    save_chat_history(user_id, {"q": question, "a": answer})
+    
+    return {"answer": answer, "history_saved": True}
 
 
 # ──────────────────────────────────────────────────────────

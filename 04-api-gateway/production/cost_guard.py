@@ -70,11 +70,12 @@ class CostGuard:
         # 2. Lấy/Reset record của user
         record = self._get_record(user_id)
 
-        # 3. Kiểm tra Global budget (Toàn hệ thống)
+        # Global budget check
         if self._global_cost >= self.global_daily_budget_usd:
+            logger.critical(f"GLOBAL BUDGET EXCEEDED: ${self._global_cost:.4f}")
             raise HTTPException(
-                status_code=503,  # Service Unavailable
-                detail="Global daily budget exceeded. Please contact admin.",
+                status_code=503,
+                detail="Service temporarily unavailable due to budget limits. Try again tomorrow.",
             )
 
         # Per-user budget check
