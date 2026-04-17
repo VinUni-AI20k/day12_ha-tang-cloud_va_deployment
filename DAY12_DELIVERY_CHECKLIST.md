@@ -277,9 +277,9 @@ output:
 
 ## Screenshots
 
-- [Deployment dashboard](screenshots/dashboard.png)
-- [Service running](screenshots/running.png)
-- [Test results](screenshots/test.png)
+- [Deployment dashboard](screenshots/6-dashboard.png)
+- [Service running](screenshots/6-running.png)
+- [Test results](screenshots/6-test.png)
 
 ````
 
