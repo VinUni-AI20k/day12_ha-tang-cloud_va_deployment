@@ -174,13 +174,11 @@ def ready():
 
 def handle_sigterm(signum, frame):
     """
-    SIGTERM là signal platform gửi khi muốn dừng container.
-    Khác với SIGKILL (không thể catch được).
-
-    uvicorn bắt SIGTERM tự động và gọi lifespan shutdown.
-    Hàm này để log thêm thông tin.
+    Xử lý khi server nhận tín hiệu tắt.
     """
-    logger.info(f"Received signal {signum} — uvicorn will handle graceful shutdown")
+    global _is_ready
+    _is_ready = False  # ✅ Báo cho Load Balancer biết để không gửi traffic vào nữa
+    logger.info(f"Received signal {signum} — switching to not ready and shutting down")
 
 
 signal.signal(signal.SIGTERM, handle_sigterm)

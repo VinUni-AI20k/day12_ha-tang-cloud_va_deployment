@@ -58,18 +58,23 @@ class CostGuard:
         return self._records[user_id]
 
     def check_budget(self, user_id: str) -> None:
-        """
-        Kiểm tra budget trước khi gọi LLM.
-        Raise 402 nếu vượt budget.
-        """
+        """Kiểm tra ngân sách toàn cục và từng user. Reset nếu sang ngày mới."""
+        today = time.strftime("%Y-%m-%d")
+        
+        # 1. Reset global cost nếu sang ngày mới
+        if self._global_today != today:
+            logger.info(f"Resetting global daily budget for {today}")
+            self._global_today = today
+            self._global_cost = 0.0
+
+        # 2. Lấy/Reset record của user
         record = self._get_record(user_id)
 
-        # Global budget check
+        # 3. Kiểm tra Global budget (Toàn hệ thống)
         if self._global_cost >= self.global_daily_budget_usd:
-            logger.critical(f"GLOBAL BUDGET EXCEEDED: ${self._global_cost:.4f}")
             raise HTTPException(
-                status_code=503,
-                detail="Service temporarily unavailable due to budget limits. Try again tomorrow.",
+                status_code=503,  # Service Unavailable
+                detail="Global daily budget exceeded. Please contact admin.",
             )
 
         # Per-user budget check
