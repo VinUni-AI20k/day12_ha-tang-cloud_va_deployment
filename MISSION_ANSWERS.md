@@ -10,27 +10,27 @@
 
 ### Exercise 1.1: Anti-patterns found
 
-1. Hardcoded secrets in source code can leak immediately if the repository is pushed publicly.
-2. Hardcoded host, port, debug mode, and limits make the app difficult to move between local, Docker, and cloud environments.
-3. Using `print()` instead of structured logging makes debugging and monitoring harder in production.
-4. Missing health and readiness endpoints means the platform cannot safely detect broken startup or unhealthy containers.
-5. Keeping state only in memory breaks reliability when the app is scaled to multiple containers.
+1. Hardcoded secret trong source code rất nguy hiểm vì có thể bị lộ ngay khi push repo lên public.
+2. Hardcoded host, port, debug mode, và các giới hạn khiến ứng dụng khó di chuyển giữa local, Docker, và môi trường cloud.
+3. Dùng `print()` thay vì structured logging làm việc debug và monitoring trên production khó hơn.
+4. Thiếu endpoint health và readiness khiến platform không thể phát hiện an toàn việc startup lỗi hoặc container không khỏe.
+5. Lưu state hoàn toàn trong memory sẽ làm ứng dụng kém tin cậy khi scale ra nhiều container.
 
 ### Exercise 1.2: Result of running the basic version
 
-The basic local version can answer simple requests, but it is not production-ready. It does not have production-safe secret handling, health checks, readiness checks, structured logging, or stateless shared storage.
+Bản local cơ bản có thể trả lời các request đơn giản, nhưng chưa production-ready. Nó chưa có cách quản lý secret an toàn, chưa có health check, readiness check, structured logging, và chưa có shared storage theo kiểu stateless.
 
 ### Exercise 1.3: Comparison table
 
 | Feature | Develop | Production | Why Important? |
 |---------|---------|------------|----------------|
-| Config | Hardcoded values in source | Read from environment variables in `Settings` | Makes deployment safer and easier to change per environment |
-| Host/Port | Fixed local values | Uses `0.0.0.0` and `PORT` | Required for Docker and Railway/Render |
-| Logging | Basic console output | Structured JSON logging | Easier monitoring and debugging |
-| Health checks | Usually missing | `/health` and `/ready` | Needed for orchestrators and load balancers |
-| Security | Minimal or none | API key authentication with `X-API-Key` | Prevents unauthorized access |
-| State | In-memory | Redis-backed shared state | Works correctly across multiple instances |
-| Shutdown | Abrupt process stop | Lifespan shutdown plus SIGTERM handling | Safer deploys and less interrupted traffic |
+| Config | Hardcoded giá trị trong source | Đọc từ environment variables trong `Settings` | Giúp deploy an toàn hơn và dễ đổi cấu hình theo từng môi trường |
+| Host/Port | Dùng giá trị local cố định | Dùng `0.0.0.0` và `PORT` | Bắt buộc khi chạy Docker và Railway/Render |
+| Logging | In console cơ bản | Structured JSON logging | Dễ monitoring và debug hơn |
+| Health checks | Thường không có | `/health` và `/ready` | Cần cho orchestrator và load balancer |
+| Security | Ít hoặc không có | API key authentication với `X-API-Key` | Ngăn truy cập trái phép |
+| State | In-memory | Shared state bằng Redis | Hoạt động đúng khi có nhiều instance |
+| Shutdown | Tắt đột ngột | Lifespan shutdown + xử lý SIGTERM | Deploy an toàn hơn và ít làm gián đoạn traffic |
 
 ---
 
@@ -39,34 +39,34 @@ The basic local version can answer simple requests, but it is not production-rea
 ### Exercise 2.1: Dockerfile questions
 
 1. Base image: `python:3.11-slim`
-2. Working directory: `/build` in the builder stage and `/app` in the runtime stage
-3. `COPY requirements.txt` is done before source code so Docker can reuse the dependency layer when code changes but requirements do not.
-4. `CMD` defines the default process for the container and is appropriate here because the app starts with a single uvicorn command.
+2. Working directory: `/build` ở builder stage và `/app` ở runtime stage
+3. `COPY requirements.txt` được đặt trước source code để Docker có thể tái sử dụng layer cài dependencies khi code thay đổi nhưng requirements không đổi.
+4. `CMD` định nghĩa process mặc định của container và phù hợp ở đây vì ứng dụng khởi động bằng một lệnh uvicorn duy nhất.
 
 ### Exercise 2.2: Image size comparison
 
-- Develop image: not re-measured in this final audit
+- Develop image: chưa đo lại trong lần audit cuối này
 - Production image: `247 MB` (`docker images day12-agent-prod`)
-- Difference: the production image is under the lab requirement of `500 MB` and is reduced by using `python:3.11-slim`, a multi-stage build, and a minimal runtime image
+- Difference: production image nằm dưới yêu cầu `500 MB` của bài và nhỏ hơn nhờ dùng `python:3.11-slim`, multi-stage build, và runtime image tối giản
 
 ### Exercise 2.3: Multi-stage build
 
-- Stage 1 installs dependencies into `/build/packages`
-- Stage 2 copies only installed packages and app source into the runtime image
-- This reduces image size and removes unnecessary build dependencies
-- The runtime container runs as non-root user `appuser`
+- Stage 1 cài dependencies vào `/build/packages`
+- Stage 2 chỉ copy packages đã cài và source code vào runtime image
+- Cách này làm image nhỏ hơn và loại bỏ các build dependency không cần thiết
+- Runtime container chạy bằng non-root user `appuser`
 
 ### Exercise 2.4: Docker Compose architecture
 
-Final stack in this repo:
+Stack cuối cùng trong repo này:
 
 ```text
 Client -> Nginx -> Agent -> Redis
 ```
 
-- `nginx`: reverse proxy on port 80
-- `agent`: FastAPI application
-- `redis`: shared storage for rate limiting, cost tracking, and conversation history
+- `nginx`: reverse proxy trên port 80
+- `agent`: ứng dụng FastAPI
+- `redis`: shared storage cho rate limiting, cost tracking, và conversation history
 
 ---
 
@@ -76,13 +76,13 @@ Client -> Nginx -> Agent -> Redis
 
 - URL: https://day12-final-production.up.railway.app
 - Platform: Railway
-- Current health result verified on 17/04/2026:
+- Kết quả health check đã verify ngày 17/04/2026:
 
 ```json
 {"status":"ok","version":"1.0.0","environment":"production","checks":{"llm":"mock","redis":"ok"}}
 ```
 
-- Screenshot to include before submission: `screenshots/dashboard.png`
+- Screenshot cần có trước khi nộp: `screenshots/dashboard.png`
 
 ### Exercise 3.2: Compare `railway.toml` vs `render.yaml`
 
@@ -90,9 +90,20 @@ Client -> Nginx -> Agent -> Redis
 |---------|----------------|---------------|
 | Format | TOML | YAML |
 | Health check | `healthcheckPath` | `healthCheckPath` |
-| Start command | Defined in `[deploy]` | Defined in the service section |
-| Restart policy | Explicit fields | Managed through Render config |
-| Environment variables | Usually set in dashboard or CLI | Can be declared in `envVars` |
+| Start command | Định nghĩa trong `[deploy]` | Định nghĩa trong service section |
+| Restart policy | Có field tường minh | Được quản lý qua Render config |
+| Environment variables | Thường set qua dashboard hoặc CLI | Có thể khai báo trong `envVars` |
+
+### Exercise 3.3: GCP Cloud Run CI/CD
+
+Đây là phần bonus nên em tìm hiểu ở mức khái niệm và cấu hình cơ bản. Trong repo hiện có sẵn 2 file liên quan là:
+
+- `03-cloud-deployment/production-cloud-run/cloudbuild.yaml`
+- `03-cloud-deployment/production-cloud-run/service.yaml`
+
+Theo em hiểu thì luồng CI/CD với Cloud Run sẽ là: khi push code, Cloud Build đọc `cloudbuild.yaml` để build image, sau đó đẩy image lên registry rồi deploy lên Cloud Run bằng `service.yaml`. Mỗi lần deploy sẽ tạo revision mới để cập nhật service.
+
+Trong bài này em triển khai production thật trên Railway, còn phần Cloud Run em dừng ở mức đọc cấu hình và hiểu cách hoạt động của pipeline.
 
 ---
 
@@ -100,52 +111,52 @@ Client -> Nginx -> Agent -> Redis
 
 ### Exercise 4.1: API key authentication
 
-- API key validation is implemented in `app/auth.py`
-- The expected key is read from `AGENT_API_KEY`
-- Requests must include `X-API-Key`
-- Missing or invalid API key returns `401`
+- Việc validate API key được triển khai trong `app/auth.py`
+- Key hợp lệ được đọc từ `AGENT_API_KEY`
+- Request phải gửi `X-API-Key`
+- Thiếu hoặc sai API key sẽ trả về `401`
 
-Verified behavior on the live Railway service:
+Hành vi đã verify trên Railway service:
 
 ```text
-POST /ask without X-API-Key -> 401
-POST /ask with valid X-API-Key -> 200
+POST /ask không có X-API-Key -> 401
+POST /ask có X-API-Key hợp lệ -> 200
 ```
 
 ### Exercise 4.2: JWT authentication
 
-The final submitted repo uses API key authentication only and does not implement JWT login endpoints. If JWT were added later, the normal flow would be:
+Repo final nộp bài chỉ dùng API key authentication và không triển khai JWT login endpoint. Nếu bổ sung JWT sau này thì flow thông thường sẽ là:
 
-1. User authenticates and receives a token
-2. Client sends `Authorization: Bearer <token>`
-3. Server validates the token before allowing access
+1. User đăng nhập và nhận token
+2. Client gửi `Authorization: Bearer <token>`
+3. Server validate token trước khi cho phép truy cập
 
-For this submission, API key authentication is the mechanism actually implemented and deployed.
+Trong bài nộp này, cơ chế auth thực tế đang được triển khai và deploy là API key authentication.
 
 ### Exercise 4.3: Rate limiting
 
 - Algorithm: sliding window
 - Primary storage: Redis sorted set
-- Fallback: in-memory list when Redis is unavailable
-- Limit: `10 req/min` per user
+- Fallback: in-memory list khi Redis không khả dụng
+- Limit: `10 req/min` cho mỗi user
 
-Verified result on the live Railway service:
+Kết quả đã verify trên Railway service:
 
 ```text
 [200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 429, 429]
 ```
 
-This confirms the first 10 requests were accepted and later requests were rate-limited.
+Kết quả này xác nhận 10 request đầu được chấp nhận và các request sau bị rate limit.
 
 ### Exercise 4.4: Cost guard implementation
 
-The app estimates token cost and stores monthly usage in Redis with keys like:
+Ứng dụng ước tính token cost và lưu usage theo tháng trong Redis với key dạng:
 
 ```text
 cost:{user_id}:{YYYY-MM}
 ```
 
-When the monthly budget is reached, the app returns `402`. The final app uses `MONTHLY_BUDGET_USD`, with default value `$10/month`.
+Khi user chạm ngưỡng budget theo tháng, app sẽ trả về `402`. Ứng dụng final dùng `MONTHLY_BUDGET_USD`, với giá trị mặc định là `$10/month`.
 
 ---
 
@@ -153,10 +164,10 @@ When the monthly budget is reached, the app returns `402`. The final app uses `M
 
 ### Exercise 5.1: Health and readiness checks
 
-- `/health`: liveness endpoint that returns status, version, environment, uptime, and Redis health
-- `/ready`: readiness endpoint that returns `503` when the app is not ready and `200` when it is ready
+- `/health`: liveness endpoint trả về status, version, environment, uptime, và Redis health
+- `/ready`: readiness endpoint trả về `503` khi app chưa sẵn sàng và `200` khi app đã ready
 
-Verified live results:
+Kết quả live đã verify:
 
 ```text
 GET /health -> 200
@@ -165,32 +176,32 @@ GET /ready  -> 200
 
 ### Exercise 5.2: Graceful shutdown
 
-The final app includes:
+Ứng dụng final có:
 
-1. A FastAPI lifespan handler for startup and shutdown
-2. A SIGTERM signal handler for shutdown logging
-3. Redis connection cleanup during shutdown
+1. FastAPI lifespan handler cho startup và shutdown
+2. SIGTERM signal handler để log sự kiện shutdown
+3. Cleanup kết nối Redis khi shutdown
 
 ### Exercise 5.3: Stateless design
 
-The app avoids storing important request state only in process memory. Conversation history, rate limit data, and cost data are stored in Redis so multiple instances can share the same state.
+Ứng dụng tránh lưu request state quan trọng chỉ trong process memory. Conversation history, rate limit data, và cost data được lưu trong Redis để nhiều instance có thể dùng chung state.
 
 ### Exercise 5.4: Load balancing with Nginx
 
-Nginx sits in front of the FastAPI service and forwards requests to the agent container. This is the standard pattern for scaling the application behind a reverse proxy.
+Nginx đứng trước FastAPI service và forward request vào agent container. Đây là pattern tiêu chuẩn để scale ứng dụng phía sau reverse proxy.
 
 ### Exercise 5.5: Testing stateless behavior
 
-A stateless design can be tested by running multiple agent instances behind Nginx and verifying that the same user still receives consistent conversation history and rate limits because Redis is shared across instances.
+Một thiết kế stateless có thể được kiểm tra bằng cách chạy nhiều agent instance sau Nginx và xác minh rằng cùng một user vẫn nhận được conversation history và rate limits nhất quán vì Redis là shared giữa các instance.
 
 ---
 
 ## Additional Verification
 
-I also ran the repository self-check script in `06-lab-complete`:
+Em cũng đã chạy script self-check của repo trong `my-production-agent`:
 
 ```text
 Production readiness check: 25/25 checks passed
 ```
 
-This confirms that the final repo currently satisfies the main technical checklist for the Day 12 lab.
+Điều này xác nhận repo final hiện tại đáp ứng các yêu cầu kỹ thuật chính của Day 12 lab.

@@ -1,6 +1,6 @@
 # Lab 12 - Complete Production Agent
 
-Project tong hop cac yeu cau production cho Day 12: auth, rate limit, cost guard, Docker, Redis, readiness check, va deploy.
+Project tổng hợp các yêu cầu production cho Day 12: auth, rate limit, cost guard, Docker, Redis, readiness check, và deploy.
 
 ## Checklist Deliverable
 
@@ -12,7 +12,7 @@ Project tong hop cac yeu cau production cho Day 12: auth, rate limit, cost guard
 - [x] API key authentication
 - [x] Rate limiting `10 req/min`
 - [x] Cost guard `$10/month`
-- [x] Config tu environment variables
+- [x] Config từ environment variables
 - [x] Structured logging
 - [x] Graceful shutdown
 - [x] Railway / Render config
@@ -20,7 +20,7 @@ Project tong hop cac yeu cau production cho Day 12: auth, rate limit, cost guard
 ## Structure
 
 ```text
-06-lab-complete/
+my-production-agent/
 |-- app/
 |   |-- main.py
 |   |-- config.py
@@ -71,7 +71,7 @@ railway up
 
 Render:
 
-1. Push repo len GitHub.
+1. Push repo lên GitHub.
 2. Create service from `render.yaml`.
 3. Set secrets `AGENT_API_KEY`, `JWT_SECRET`, `MONTHLY_BUDGET_USD`.
 4. Deploy and test `GET /health`, `GET /ready`, `POST /ask`.
