@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lab06-production-ready:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies (Lab 06)
+        working-directory: 06-lab-complete
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run production readiness checks (Lab 06)
+        working-directory: 06-lab-complete
+        run: |
+          python check_production_ready.py
+
+      - name: Build Docker image (Lab 06)
+        working-directory: 06-lab-complete
+        run: |
+          docker build -t lab06-agent:ci .
+
+      - name: Smoke test container health endpoint
+        working-directory: 06-lab-complete
+        run: |
+          docker run -d --rm --name lab06-agent-ci -p 8000:8000 \
+            -e ENVIRONMENT=ci \
+            -e AGENT_API_KEY=dev-key-change-me \
+            lab06-agent:ci
+
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health > /dev/null; then
+              echo "Health check OK"
+              break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "Health check failed" >&2
+              docker logs lab06-agent-ci || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          docker stop lab06-agent-ci

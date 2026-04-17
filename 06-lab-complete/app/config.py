@@ -3,6 +3,20 @@ import os
 import logging
 from dataclasses import dataclass, field
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover
+    load_dotenv = None
+
+
+# Local DX: load `.env` automatically when not in production.
+# In real deployments (Railway/Render), env vars should be set by the platform.
+if os.getenv("ENVIRONMENT", "development") != "production":
+    _here = os.path.dirname(__file__)
+    _env_path = os.path.abspath(os.path.join(_here, "..", ".env"))
+    if load_dotenv is not None:
+        load_dotenv(_env_path, override=False)
+
 
 @dataclass
 class Settings:
@@ -16,9 +30,10 @@ class Settings:
     app_name: str = field(default_factory=lambda: os.getenv("APP_NAME", "Production AI Agent"))
     app_version: str = field(default_factory=lambda: os.getenv("APP_VERSION", "1.0.0"))
 
-    # LLM
-    openai_api_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
-    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gpt-4o-mini"))
+    # LLM (DashScope / Qwen)
+    dashscope_endpoint: str = field(default_factory=lambda: os.getenv("DASHSCOPE_ENDPOINT", ""))
+    dashscope_api_key: str = field(default_factory=lambda: os.getenv("DASHSCOPE_API_KEY", ""))
+    qwen_model: str = field(default_factory=lambda: os.getenv("QWEN_MODEL", "qwen3.5-27b"))
 
     # Security
     agent_api_key: str = field(default_factory=lambda: os.getenv("AGENT_API_KEY", "dev-key-change-me"))
@@ -47,8 +62,8 @@ class Settings:
                 raise ValueError("AGENT_API_KEY must be set in production!")
             if self.jwt_secret == "dev-jwt-secret":
                 raise ValueError("JWT_SECRET must be set in production!")
-        if not self.openai_api_key:
-            logger.warning("OPENAI_API_KEY not set — using mock LLM")
+        if not self.dashscope_api_key or not self.dashscope_endpoint:
+            logger.warning("DashScope env not set (DASHSCOPE_API_KEY/DASHSCOPE_ENDPOINT) — using mock LLM")
         return self
 
 

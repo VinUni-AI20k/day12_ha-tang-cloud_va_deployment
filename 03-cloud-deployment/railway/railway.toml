@@ -11,7 +11,7 @@ builder = "NIXPACKS"
 
 [deploy]
 # ✅ Start command — Railway inject PORT tự động
-startCommand = "uvicorn app:app --host 0.0.0.0 --port $PORT"
+startCommand = "sh -c 'uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}'"
 
 # Health check — Railway restart nếu fail
 healthcheckPath = "/health"

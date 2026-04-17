@@ -11,8 +11,12 @@ services:
         value: production
       - key: APP_VERSION
         value: "1.0.0"
-      - key: OPENAI_API_KEY
+      - key: DASHSCOPE_API_KEY
         sync: false
+      - key: DASHSCOPE_ENDPOINT
+        value: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+      - key: QWEN_MODEL
+        value: qwen3.5-27b
       - key: AGENT_API_KEY
         generateValue: true
       - key: JWT_SECRET
