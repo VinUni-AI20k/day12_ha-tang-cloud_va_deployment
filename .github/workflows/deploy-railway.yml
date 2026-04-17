@@ -1,0 +1,37 @@
+name: Deploy To Railway
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "my-production-agent/**"
+      - ".github/workflows/deploy-railway.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up my-production-agent \
+            --path-as-root \
+            --ci \
+            --project 8d621142-5838-4aab-b005-99c6b9c32f8d \
+            --environment production \
+            --service day12-final \
+            --message "GitHub Actions deploy ${GITHUB_SHA}"

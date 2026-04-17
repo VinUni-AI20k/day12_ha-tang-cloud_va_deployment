@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r my-production-agent/requirements.txt
+
+      - name: Check Python syntax
+        run: |
+          python -m py_compile my-production-agent/app/main.py
+          python -m py_compile my-production-agent/app/config.py
+          python -m py_compile my-production-agent/app/auth.py
+          python -m py_compile my-production-agent/app/rate_limiter.py
+          python -m py_compile my-production-agent/app/cost_guard.py
+          python -m py_compile my-production-agent/check_production_ready.py
+
+      - name: Run production readiness check
+        working-directory: my-production-agent
+        run: python check_production_ready.py
