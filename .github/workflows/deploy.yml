@@ -2,7 +2,7 @@ name: CI/CD — Build, Test, Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, lab12_version_1]
     paths:
       - "2A202600057-production-agent/**"
   pull_request:
@@ -52,7 +52,7 @@ jobs:
     name: Deploy to Railway
     runs-on: ubuntu-latest
     needs: test                    # chỉ deploy nếu test pass
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref_name == 'main' || github.ref_name == 'lab12_version_1'
     defaults:
       run:
         working-directory: 2A202600057-production-agent
