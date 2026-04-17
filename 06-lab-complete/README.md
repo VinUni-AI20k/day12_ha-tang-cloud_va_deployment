@@ -50,12 +50,12 @@ cp .env.example .env
 docker compose up
 
 # 3. Test
-curl http://localhost/health
+curl http://localhost:8000/health
 
 # 4. Lấy API key từ .env, test endpoint
 API_KEY=$(grep AGENT_API_KEY .env | cut -d= -f2)
 curl -H "X-API-Key: $API_KEY" \
-     -X POST http://localhost/ask \
+     -X POST http://localhost:8000/ask \
      -H "Content-Type: application/json" \
      -d '{"question": "What is deployment?"}'
 ```
@@ -71,7 +71,9 @@ npm i -g @railway/cli
 # Login và deploy
 railway login
 railway init
-railway variables set OPENAI_API_KEY=sk-...
+railway variables set DASHSCOPE_API_KEY=sk-...
+railway variables set DASHSCOPE_ENDPOINT=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+railway variables set QWEN_MODEL=qwen3.5-27b
 railway variables set AGENT_API_KEY=your-secret-key
 railway up
 
@@ -86,7 +88,7 @@ railway domain
 1. Push repo lên GitHub
 2. Render Dashboard → New → Blueprint
 3. Connect repo → Render đọc `render.yaml`
-4. Set secrets: `OPENAI_API_KEY`, `AGENT_API_KEY`
+4. Set secrets: `DASHSCOPE_API_KEY`, `AGENT_API_KEY`
 5. Deploy → Nhận URL!
 
 ---

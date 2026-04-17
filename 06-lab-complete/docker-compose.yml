@@ -1,16 +1,12 @@
-version: "3.9"
-
 services:
   agent:
     build: .
     ports:
       - "8000:8000"
     environment:
-      - ENVIRONMENT=staging
-      - APP_NAME=Production AI Agent
       - REDIS_URL=redis://redis:6379/0
     env_file:
-      - .env.local
+      - .env
     depends_on:
       redis:
         condition: service_healthy
