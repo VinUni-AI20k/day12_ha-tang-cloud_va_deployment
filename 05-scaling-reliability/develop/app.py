@@ -82,19 +82,26 @@ async def track_requests(request, call_next):
 
 
 # ──────────────────────────────────────────────────────────
-# Business Logic
+# Business Logic (Stateless with Redis)
 # ──────────────────────────────────────────────────────────
+import redis
+import json
 
-@app.get("/")
-def root():
-    return {"message": "AI Agent with health checks!"}
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
+def save_chat_history(user_id: str, message: dict):
+    redis_client.rpush(f"chat:{user_id}", json.dumps(message))
+    redis_client.ltrim(f"chat:{user_id}", -10, -1)
 
 @app.post("/ask")
-async def ask_agent(question: str):
+async def ask_agent(question: str, user_id: str = "default_user"):
     if not _is_ready:
         raise HTTPException(503, "Agent not ready")
-    return {"answer": ask(question)}
+    
+    answer = ask(question)
+    save_chat_history(user_id, {"q": question, "a": answer})
+    
+    return {"answer": answer, "history_saved": True}
 
 
 # ──────────────────────────────────────────────────────────
@@ -174,13 +181,11 @@ def ready():
 
 def handle_sigterm(signum, frame):
     """
-    SIGTERM là signal platform gửi khi muốn dừng container.
-    Khác với SIGKILL (không thể catch được).
-
-    uvicorn bắt SIGTERM tự động và gọi lifespan shutdown.
-    Hàm này để log thêm thông tin.
+    Xử lý khi server nhận tín hiệu tắt.
     """
-    logger.info(f"Received signal {signum} — uvicorn will handle graceful shutdown")
+    global _is_ready
+    _is_ready = False  # ✅ Báo cho Load Balancer biết để không gửi traffic vào nữa
+    logger.info(f"Received signal {signum} — switching to not ready and shutting down")
 
 
 signal.signal(signal.SIGTERM, handle_sigterm)

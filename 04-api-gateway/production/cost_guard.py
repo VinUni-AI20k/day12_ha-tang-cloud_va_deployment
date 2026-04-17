@@ -58,10 +58,16 @@ class CostGuard:
         return self._records[user_id]
 
     def check_budget(self, user_id: str) -> None:
-        """
-        Kiểm tra budget trước khi gọi LLM.
-        Raise 402 nếu vượt budget.
-        """
+        """Kiểm tra ngân sách toàn cục và từng user. Reset nếu sang ngày mới."""
+        today = time.strftime("%Y-%m-%d")
+        
+        # 1. Reset global cost nếu sang ngày mới
+        if self._global_today != today:
+            logger.info(f"Resetting global daily budget for {today}")
+            self._global_today = today
+            self._global_cost = 0.0
+
+        # 2. Lấy/Reset record của user
         record = self._get_record(user_id)
 
         # Global budget check

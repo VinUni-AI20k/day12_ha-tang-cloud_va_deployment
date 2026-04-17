@@ -64,15 +64,20 @@ def root():
     return {"message": "AI Agent API", "auth": "Required for /ask"}
 
 
+from pydantic import BaseModel
+
+class QuestionRequest(BaseModel):
+    question: str
+
 @app.post("/ask")
 async def ask_agent(
-    question: str,
-    _key: str = Depends(verify_api_key),  # ✅ require auth
+    request: QuestionRequest,
+    user: str = Depends(verify_api_key),
 ):
-    """Protected endpoint — cần X-API-Key header"""
+    """Protected endpoint — cần X-API-Key header và JSON Body"""
     return {
-        "question": question,
-        "answer": ask(question),
+        "question": request.question,
+        "answer": ask(request.question),
     }
 
 

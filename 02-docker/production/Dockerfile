@@ -24,32 +24,24 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy và cài requirements
-# Dùng --user để install vào /root/.local (dễ copy sang stage 2)
 COPY 02-docker/production/requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-
-# ──────────────────────────────────────────────────────────
 # STAGE 2: Runtime
-# Chỉ copy những gì cần để CHẠY, không cần để BUILD
-# ──────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
-
-# Tạo non-root user — security best practice
-# Chạy với root trong container là bad practice
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
 WORKDIR /app
 
-# Copy installed packages từ builder
+# Tạo non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copy installed packages
 COPY --from=builder /root/.local /home/appuser/.local
 
 # Copy source code
 COPY 02-docker/production/main.py .
 
 # Copy utils from project root
-RUN mkdir -p /app/utils
-COPY utils/mock_llm.py /app/utils/mock_llm.py
+COPY utils/ /app/utils/
 
 # Đặt ownership cho appuser
 RUN chown -R appuser:appuser /app
