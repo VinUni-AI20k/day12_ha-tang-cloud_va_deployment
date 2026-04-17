@@ -125,6 +125,51 @@ class ChatRequest(BaseModel):
 # Endpoints
 # ──────────────────────────────────────────────────────────
 
+# ──────────────────────────────────────────────────────────
+# Exercise 5.3: Stateless Design Demo
+#
+# ❌ Anti-pattern — State trong memory (KHÔNG làm thế này):
+#
+#   conversation_history = {}
+#
+#   @app.post("/ask")
+#   def ask(user_id: str, question: str):
+#       history = conversation_history.get(user_id, [])
+#       # Vấn đề: Instance 1 có history của user, Instance 2 thì không!
+#
+# ✅ Correct — State trong Redis (stateless):
+# ──────────────────────────────────────────────────────────
+
+@app.post("/ask")
+async def ask_stateless(user_id: str, question: str):
+    """
+    Stateless /ask endpoint dùng Redis lrange/rpush.
+    Bất kỳ instance nào cũng đọc được history của user.
+    """
+    history_key = f"history:{user_id}"
+
+    # Đọc history từ Redis (không phải từ memory)
+    history = _redis.lrange(history_key, 0, -1) if USE_REDIS else []
+
+    # Gọi LLM
+    answer = ask(question)
+
+    # Lưu vào Redis (tất cả instances đều thấy)
+    if USE_REDIS:
+        _redis.rpush(history_key, f"user: {question}")
+        _redis.rpush(history_key, f"assistant: {answer}")
+        _redis.expire(history_key, 3600)  # TTL 1 giờ
+
+    return {
+        "user_id": user_id,
+        "question": question,
+        "answer": answer,
+        "history_length": len(history),
+        "served_by": INSTANCE_ID,
+        "storage": "redis" if USE_REDIS else "in-memory ⚠️",
+    }
+
+
 @app.post("/chat")
 async def chat(body: ChatRequest):
     """
@@ -217,4 +262,4 @@ def ready():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=port)

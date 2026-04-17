@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p 2A202600057-production-agent/utils)",
+      "Bash(mv app *)",
+      "Bash(cp utils/mock_llm.py 2A202600057-production-agent/utils/)",
+      "Bash(mv Dockerfile docker-compose.yml nginx.conf requirements.txt .env.example .dockerignore railway.toml check_production_ready.py 2A202600057-production-agent/)",
+      "Bash(mv .env.local 2A202600057-production-agent/)"
+    ]
+  }
+}
