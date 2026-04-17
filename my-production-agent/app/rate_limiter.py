@@ -1,5 +1,6 @@
 import time
 import redis
+import uuid
 from fastapi import HTTPException
 from .config import settings
 
@@ -19,5 +20,7 @@ def check_rate_limit(user_id: str):
     if count >= max_reqs:
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
 
-    r.zadd(key, {str(now): now})
+    # Use UUID to ensure each request is unique in the ZSet even if they hit the same second
+    member = f"{now}-{uuid.uuid4()}"
+    r.zadd(key, {member: now})
     r.expire(key, window)

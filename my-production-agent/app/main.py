@@ -1,5 +1,6 @@
 import json
 import logging
+import signal
 import time
 import asyncio
 from contextlib import asynccontextmanager
@@ -11,36 +12,50 @@ from .config import settings
 from .auth import verify_api_key
 from .rate_limiter import check_rate_limit, r
 from .cost_guard import check_budget
-# mock_llm.py was copied to app/utils/mock_llm.py
 from .utils.mock_llm import ask
 
-logging.basicConfig(level=settings.LOG_LEVEL)
+logging.basicConfig(
+    level=settings.LOG_LEVEL,
+    format="%(message)s",
+)
 logger = logging.getLogger(__name__)
+
+
+def _log(event: str, **kwargs):
+    """Structured JSON logging."""
+    logger.info(json.dumps({"event": event, **kwargs}))
 
 # State management for graceful shutdown
 _is_ready = False
 _in_flight_requests = 0
 
+def _sigterm_handler(signum, frame):
+    """Handle SIGTERM from container orchestrator — FastAPI lifespan handles the rest."""
+    _log("signal_received", signum=signum)
+
+
+signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _is_ready
-    logger.info("Starting up application...")
-    # Simulate loading model / warming up
-    await asyncio.sleep(0.5)
+    _log("startup", version="1.0.0")
+    await asyncio.sleep(0.5)  # simulate warm-up
     _is_ready = True
-    logger.info("Application is ready!")
-    
+    _log("ready")
+
     yield
-    
-    # Graceful shutdown
+
+    # Graceful shutdown: stop taking new requests, wait for in-flight ones
     _is_ready = False
-    logger.info("Shutting down... waiting for in-flight requests")
+    _log("shutdown_initiated", in_flight=_in_flight_requests)
     shutdown_timeout = 30
     elapsed = 0
     while _in_flight_requests > 0 and elapsed < shutdown_timeout:
         await asyncio.sleep(1)
         elapsed += 1
-    logger.info("Shutdown complete.")
+    _log("shutdown_complete")
 
 app = FastAPI(title="Production Ready AI Agent", lifespan=lifespan)
 
@@ -48,8 +63,14 @@ app = FastAPI(title="Production Ready AI Agent", lifespan=lifespan)
 async def track_requests(request, call_next):
     global _in_flight_requests
     _in_flight_requests += 1
+    start = time.time()
     try:
         response = await call_next(request)
+        _log("request",
+             method=request.method,
+             path=request.url.path,
+             status=response.status_code,
+             ms=round((time.time() - start) * 1000, 1))
         return response
     finally:
         _in_flight_requests -= 1
